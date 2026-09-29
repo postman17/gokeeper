@@ -97,6 +97,67 @@ message DeleteItemRequest {
 message DeleteItemResponse {
   bool ok = 1;
 }
+// FileMeta describes an uploaded file.
+message FileMeta {
+  string name = 1;
+  int64 size = 2;
+  string meta = 3;
+}
+
+// UploadFileRequest is a single message of the upload stream: either the
+// file metadata (must come first) or a content chunk.
+message UploadFileRequest {
+  oneof data {
+    FileMeta meta = 1;
+    bytes chunk = 2;
+  }
+}
+
+// UploadFileResponse returns the id of the stored file.
+message UploadFileResponse {
+  string id = 1;
+}
+
+// DownloadFileRequest identifies the file to download.
+message DownloadFileRequest {
+  string id = 1;
+}
+
+// DownloadFileResponse is a single message of the download stream: the file
+// metadata first, then content chunks.
+message DownloadFileResponse {
+  oneof data {
+    FileMeta meta = 1;
+    bytes chunk = 2;
+  }
+}
+
+// FileInfo is a file record without its content.
+message FileInfo {
+  string id = 1;
+  string name = 2;
+  int64 size = 3;
+  string meta = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// ListFilesRequest asks for all files of the current user.
+message ListFilesRequest {}
+
+// ListFilesResponse contains file records of the current user.
+message ListFilesResponse {
+  repeated FileInfo files = 1;
+}
+
+// DeleteFileRequest identifies the file to delete.
+message DeleteFileRequest {
+  string id = 1;
+}
+
+// DeleteFileResponse reports the result of deletion.
+message DeleteFileResponse {
+  bool ok = 1;
+}
 
 // GophKeeper is the main service of the application.
 service GophKeeper {
@@ -114,4 +175,12 @@ service GophKeeper {
   rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
   // DeleteItem removes a secret by id.
   rpc DeleteItem(DeleteItemRequest) returns (DeleteItemResponse);
+  // UploadFile streams a file into server-side encrypted storage.
+  rpc UploadFile(stream UploadFileRequest) returns (UploadFileResponse);
+  // DownloadFile streams a stored file back to the client.
+  rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+  // ListFiles returns metadata of all files of the current user.
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  // DeleteFile removes a stored file by id.
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
 }

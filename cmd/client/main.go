@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -19,7 +20,7 @@ import (
 var serverAddr string
 
 func main() {
-	cfg := client.NewConfig()
+	cfg := loadConfig()
 
 	root := &cobra.Command{
 		Use:   "gophkeeper",
@@ -33,22 +34,29 @@ func main() {
 		pingCmd(),
 		versionCmd(),
 		itemsCmd(),
+		filesCmd(),
 	)
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
+// loadConfig builds the client config from environment defaults.
+func loadConfig() client.Config {
+	return client.NewConfig(client.WithEnv(os.Getenv))
+}
+
 // newClient builds a connected client for the configured server.
 func newClient() (*client.GophKeeperClient, func()) {
-	c, closeFn := newClientWithConfig()
+	c, closeFn := newClientWithConfig(loadConfig())
 	return c, closeFn
 }
 
 // newCachedClient builds a client with the local SQLite cache attached.
 func newCachedClient() (*client.CachedClient, func()) {
-	base, closeBase := newClientWithConfig()
-	c, err := client.NewCachedClient(base, client.NewConfig().CachePath)
+	cfg := loadConfig()
+	base, closeBase := newClientWithConfig(cfg)
+	c, err := client.NewCachedClient(base, cfg)
 	if err != nil {
 		closeBase()
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -61,8 +69,7 @@ func newCachedClient() (*client.CachedClient, func()) {
 }
 
 // newClientWithConfig builds the gRPC client honoring the address flag.
-func newClientWithConfig() (*client.GophKeeperClient, func()) {
-	cfg := client.NewConfig()
+func newClientWithConfig(cfg client.Config) (*client.GophKeeperClient, func()) {
 	if serverAddr != "" {
 		cfg.Addr = serverAddr
 	}
@@ -96,6 +103,126 @@ func registerCmd() *cobra.Command {
 				fail(err)
 			}
 			fmt.Println("registered, token saved")
+		},
+	}
+}
+
+// filesCmd builds the files command group.
+func filesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "files",
+		Short: "Manage stored files",
+	}
+	cmd.AddCommand(filesUploadCmd(), filesDownloadCmd(), filesListCmd(), filesDeleteCmd())
+	return cmd
+}
+
+// filesUploadCmd builds the files upload subcommand.
+func filesUploadCmd() *cobra.Command {
+	var name, meta string
+	cmd := &cobra.Command{
+		Use:   "upload <localpath>",
+		Short: "Upload a file to encrypted server storage",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			f, err := os.Open(args[0])
+			if err != nil {
+				fail(err)
+			}
+			defer f.Close()
+			if name == "" {
+				name = filepath.Base(args[0])
+			}
+			c, closeFn := newCachedClient()
+			defer closeFn()
+			id, err := c.UploadFile(cmd.Context(), &pb.FileMeta{Name: name, Meta: meta}, f)
+			if err != nil {
+				fail(err)
+			}
+			fmt.Println("uploaded:", id)
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "stored file name (defaults to the base name of localpath)")
+	cmd.Flags().StringVar(&meta, "meta", "", "free-form metadata")
+	return cmd
+}
+
+// filesDownloadCmd builds the files download subcommand.
+func filesDownloadCmd() *cobra.Command {
+	var out string
+	cmd := &cobra.Command{
+		Use:   "download <id>",
+		Short: "Download a stored file",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			c, closeFn := newCachedClient()
+			defer closeFn()
+			var w *os.File
+			err := c.DownloadFile(cmd.Context(), args[0], func(meta *pb.FileMeta, chunk []byte) error {
+				if meta != nil {
+					path := out
+					if path == "" {
+						path = meta.GetName()
+					}
+					f, err := os.Create(path)
+					if err != nil {
+						return err
+					}
+					w = f
+					return nil
+				}
+				_, err := w.Write(chunk)
+				return err
+			})
+			if w != nil {
+				_ = w.Close()
+			}
+			if err != nil {
+				fail(err)
+			}
+			fmt.Println("downloaded")
+		},
+	}
+	cmd.Flags().StringVarP(&out, "output", "o", "", "output path (defaults to the stored file name)")
+	return cmd
+}
+
+// filesListCmd builds the files list subcommand.
+func filesListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List all stored files",
+		Run: func(cmd *cobra.Command, args []string) {
+			c, closeFn := newCachedClient()
+			defer closeFn()
+			files, err := c.ListFiles(cmd.Context())
+			if err != nil {
+				fail(err)
+			}
+			w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+			fmt.Fprintln(w, "ID\tNAME\tSIZE\tUPDATED")
+			for _, f := range files {
+				fmt.Fprintf(w, "%s\t%s\t%d\t%s\n", f.GetId(), f.GetName(), f.GetSize(), formatTime(f.GetUpdatedAt()))
+			}
+			w.Flush()
+		},
+	}
+}
+
+// filesDeleteCmd builds the files delete subcommand.
+func filesDeleteCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Delete a stored file",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			c, closeFn := newCachedClient()
+			defer closeFn()
+			if err := c.DeleteFile(cmd.Context(), args[0]); err != nil {
+				fail(err)
+			}
+			fmt.Println("deleted")
+
 		},
 	}
 }

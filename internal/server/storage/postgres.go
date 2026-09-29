@@ -169,6 +169,81 @@ func (s *PostgresStorage) DeleteItem(ctx context.Context, userID, id uuid.UUID) 
 	return n > 0, nil
 }
 
+// CreateFile stores a file record; if file.ID is set it is used, otherwise
+// a new id is generated.
+func (s *PostgresStorage) CreateFile(ctx context.Context, file File) (uuid.UUID, error) {
+	id := file.ID
+	if id == uuid.Nil {
+		id = uuid.New()
+	}
+	params := db.CreateFileParams{
+		ID:        id,
+		UserID:    file.UserID,
+		Name:      file.Name,
+		Size:      file.Size,
+		Meta:      file.Meta,
+		S3Key:     file.S3Key,
+		UpdatedAt: time.Now(),
+	}
+	f, err := s.queries.CreateFile(ctx, params)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("insert file: %w", err)
+	}
+	return f.ID, nil
+}
+
+// newFile converts a sqlc-generated row into the storage File type.
+func newFile(row db.File) File {
+	return File{
+		ID:        row.ID,
+		UserID:    row.UserID,
+		Name:      row.Name,
+		Size:      row.Size,
+		Meta:      row.Meta,
+		S3Key:     row.S3Key,
+		UpdatedAt: row.UpdatedAt,
+	}
+}
+
+// GetFile returns the file record with the given id if it belongs to the user.
+func (s *PostgresStorage) GetFile(ctx context.Context, userID, id uuid.UUID) (File, error) {
+	row, err := s.queries.GetFile(ctx, db.GetFileParams{ID: id, UserID: userID})
+	if err != nil {
+		return File{}, fmt.Errorf("select file: %w", mapError(err))
+	}
+	return newFile(row), nil
+}
+
+// ListFiles returns all file records of the user.
+func (s *PostgresStorage) ListFiles(ctx context.Context, userID uuid.UUID) ([]File, error) {
+	rows, err := s.queries.ListFiles(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("select files: %w", err)
+	}
+	files := make([]File, 0, len(rows))
+	for _, row := range rows {
+		files = append(files, newFile(row))
+	}
+	return files, nil
+}
+
+// DeleteFile removes the file record with the given id if it belongs to the
+// user, returning the deleted record so the blob can be removed as well.
+func (s *PostgresStorage) DeleteFile(ctx context.Context, userID, id uuid.UUID) (File, bool, error) {
+	file, err := s.queries.GetFile(ctx, db.GetFileParams{ID: id, UserID: userID})
+	if err != nil {
+		if errors.Is(mapError(err), ErrNotFound) {
+			return File{}, false, nil
+		}
+		return File{}, false, fmt.Errorf("select file: %w", err)
+	}
+	n, err := s.queries.DeleteFile(ctx, db.DeleteFileParams{ID: id, UserID: userID})
+	if err != nil {
+		return File{}, false, fmt.Errorf("delete file: %w", err)
+	}
+	return newFile(file), n > 0, nil
+}
+
 // Ping checks connectivity to the database.
 func (s *PostgresStorage) Ping(ctx context.Context) error {
 	return s.pool.Ping(ctx)

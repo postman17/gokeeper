@@ -48,6 +48,39 @@ func NewUnaryInterceptor(jwt *JWTManager) grpc.UnaryServerInterceptor {
 	}
 }
 
+// NewStreamInterceptor returns a server interceptor for streaming methods
+// that verifies JWT tokens from the "authorization" metadata for all methods
+// except Register and Login.
+func NewStreamInterceptor(jwt *JWTManager) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if publicMethods[info.FullMethod] {
+			return handler(srv, ss)
+		}
+		token := tokenFromContext(ss.Context())
+		if token == "" {
+			return status.Error(codes.Unauthenticated, "missing authorization token")
+		}
+		userID, err := jwt.ParseToken(token)
+		if err != nil {
+			return status.Error(codes.Unauthenticated, "invalid authorization token")
+		}
+		ctx := context.WithValue(ss.Context(), contextKeyUserID{}, userID)
+		return handler(srv, &wrappedServerStream{ServerStream: ss, ctx: ctx})
+	}
+}
+
+// wrappedServerStream carries the context enriched with the user id through
+// the streaming handler chain.
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+// Context returns the enriched context of the wrapped stream.
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
+}
+
 // tokenFromContext extracts the bearer token from incoming metadata.
 func tokenFromContext(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)

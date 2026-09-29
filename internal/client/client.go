@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 
 	pb "github.com/kmorozov/gophkeeper/proto/gophkeeper/v1"
 	"google.golang.org/grpc"
@@ -10,6 +11,9 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+// fileChunkSize is the size of a single upload chunk (64 KiB).
+const fileChunkSize = 64 * 1024
 
 // GophKeeperClient wraps the generated gRPC client with token handling.
 type GophKeeperClient struct {
@@ -103,4 +107,91 @@ func (c *GophKeeperClient) DeleteItem(ctx context.Context, id string) (*pb.Delet
 		return nil, err
 	}
 	return c.raw.DeleteItem(ctx, &pb.DeleteItemRequest{Id: id})
+}
+
+// UploadFile streams a local file to the server in chunks, sealing each
+// chunk server-side. The reader is consumed chunk by chunk and is never
+// fully buffered in memory.
+func (c *GophKeeperClient) UploadFile(ctx context.Context, meta *pb.FileMeta, r io.Reader) (string, error) {
+	ctx, err := c.withToken(ctx)
+	if err != nil {
+		return "", err
+	}
+	stream, err := c.raw.UploadFile(ctx)
+	if err != nil {
+		return "", err
+	}
+	if err := stream.Send(&pb.UploadFileRequest{Data: &pb.UploadFileRequest_Meta{Meta: meta}}); err != nil {
+		return "", err
+	}
+	buf := make([]byte, fileChunkSize)
+	for {
+		n, err := io.ReadFull(r, buf)
+		if n > 0 {
+			if serr := stream.Send(&pb.UploadFileRequest{Data: &pb.UploadFileRequest_Chunk{Chunk: buf[:n]}}); serr != nil {
+				return "", serr
+			}
+		}
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return "", err
+	}
+	return resp.GetId(), nil
+}
+
+// DownloadFile streams a stored file from the server; onChunk is called for
+// every decrypted chunk so callers can write straight to disk.
+func (c *GophKeeperClient) DownloadFile(ctx context.Context, id string, onChunk func(*pb.FileMeta, []byte) error) error {
+	ctx, err := c.withToken(ctx)
+	if err != nil {
+		return err
+	}
+	stream, err := c.raw.DownloadFile(ctx, &pb.DownloadFileRequest{Id: id})
+	if err != nil {
+		return err
+	}
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		switch data := resp.GetData().(type) {
+		case *pb.DownloadFileResponse_Meta:
+			if err := onChunk(data.Meta, nil); err != nil {
+				return err
+			}
+		case *pb.DownloadFileResponse_Chunk:
+			if err := onChunk(nil, data.Chunk); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// ListFiles fetches the file records of the current user.
+func (c *GophKeeperClient) ListFiles(ctx context.Context) (*pb.ListFilesResponse, error) {
+	ctx, err := c.withToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.raw.ListFiles(ctx, &pb.ListFilesRequest{})
+}
+
+// DeleteFile removes a stored file by id.
+func (c *GophKeeperClient) DeleteFile(ctx context.Context, id string) (*pb.DeleteFileResponse, error) {
+	ctx, err := c.withToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.raw.DeleteFile(ctx, &pb.DeleteFileRequest{Id: id})
 }

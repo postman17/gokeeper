@@ -813,6 +813,574 @@ func (x *DeleteItemResponse) GetOk() bool {
 	return false
 }
 
+// FileMeta describes an uploaded file.
+type FileMeta struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	Meta          string                 `protobuf:"bytes,3,opt,name=meta,proto3" json:"meta,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileMeta) Reset() {
+	*x = FileMeta{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileMeta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileMeta) ProtoMessage() {}
+
+func (x *FileMeta) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileMeta.ProtoReflect.Descriptor instead.
+func (*FileMeta) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *FileMeta) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FileMeta) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileMeta) GetMeta() string {
+	if x != nil {
+		return x.Meta
+	}
+	return ""
+}
+
+// UploadFileRequest is a single message of the upload stream: either the
+// file metadata (must come first) or a content chunk.
+type UploadFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Data:
+	//
+	//	*UploadFileRequest_Meta
+	//	*UploadFileRequest_Chunk
+	Data          isUploadFileRequest_Data `protobuf_oneof:"data"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadFileRequest) Reset() {
+	*x = UploadFileRequest{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadFileRequest) ProtoMessage() {}
+
+func (x *UploadFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadFileRequest.ProtoReflect.Descriptor instead.
+func (*UploadFileRequest) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UploadFileRequest) GetData() isUploadFileRequest_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *UploadFileRequest) GetMeta() *FileMeta {
+	if x != nil {
+		if x, ok := x.Data.(*UploadFileRequest_Meta); ok {
+			return x.Meta
+		}
+	}
+	return nil
+}
+
+func (x *UploadFileRequest) GetChunk() []byte {
+	if x != nil {
+		if x, ok := x.Data.(*UploadFileRequest_Chunk); ok {
+			return x.Chunk
+		}
+	}
+	return nil
+}
+
+type isUploadFileRequest_Data interface {
+	isUploadFileRequest_Data()
+}
+
+type UploadFileRequest_Meta struct {
+	Meta *FileMeta `protobuf:"bytes,1,opt,name=meta,proto3,oneof"`
+}
+
+type UploadFileRequest_Chunk struct {
+	Chunk []byte `protobuf:"bytes,2,opt,name=chunk,proto3,oneof"`
+}
+
+func (*UploadFileRequest_Meta) isUploadFileRequest_Data() {}
+
+func (*UploadFileRequest_Chunk) isUploadFileRequest_Data() {}
+
+// UploadFileResponse returns the id of the stored file.
+type UploadFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadFileResponse) Reset() {
+	*x = UploadFileResponse{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadFileResponse) ProtoMessage() {}
+
+func (x *UploadFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadFileResponse.ProtoReflect.Descriptor instead.
+func (*UploadFileResponse) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UploadFileResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// DownloadFileRequest identifies the file to download.
+type DownloadFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadFileRequest) Reset() {
+	*x = DownloadFileRequest{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadFileRequest) ProtoMessage() {}
+
+func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadFileRequest.ProtoReflect.Descriptor instead.
+func (*DownloadFileRequest) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DownloadFileRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// DownloadFileResponse is a single message of the download stream: the file
+// metadata first, then content chunks.
+type DownloadFileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Data:
+	//
+	//	*DownloadFileResponse_Meta
+	//	*DownloadFileResponse_Chunk
+	Data          isDownloadFileResponse_Data `protobuf_oneof:"data"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadFileResponse) Reset() {
+	*x = DownloadFileResponse{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadFileResponse) ProtoMessage() {}
+
+func (x *DownloadFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadFileResponse.ProtoReflect.Descriptor instead.
+func (*DownloadFileResponse) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *DownloadFileResponse) GetData() isDownloadFileResponse_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *DownloadFileResponse) GetMeta() *FileMeta {
+	if x != nil {
+		if x, ok := x.Data.(*DownloadFileResponse_Meta); ok {
+			return x.Meta
+		}
+	}
+	return nil
+}
+
+func (x *DownloadFileResponse) GetChunk() []byte {
+	if x != nil {
+		if x, ok := x.Data.(*DownloadFileResponse_Chunk); ok {
+			return x.Chunk
+		}
+	}
+	return nil
+}
+
+type isDownloadFileResponse_Data interface {
+	isDownloadFileResponse_Data()
+}
+
+type DownloadFileResponse_Meta struct {
+	Meta *FileMeta `protobuf:"bytes,1,opt,name=meta,proto3,oneof"`
+}
+
+type DownloadFileResponse_Chunk struct {
+	Chunk []byte `protobuf:"bytes,2,opt,name=chunk,proto3,oneof"`
+}
+
+func (*DownloadFileResponse_Meta) isDownloadFileResponse_Data() {}
+
+func (*DownloadFileResponse_Chunk) isDownloadFileResponse_Data() {}
+
+// FileInfo is a file record without its content.
+type FileInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	Meta          string                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileInfo) Reset() {
+	*x = FileInfo{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileInfo) ProtoMessage() {}
+
+func (x *FileInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileInfo.ProtoReflect.Descriptor instead.
+func (*FileInfo) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *FileInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *FileInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FileInfo) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileInfo) GetMeta() string {
+	if x != nil {
+		return x.Meta
+	}
+	return ""
+}
+
+func (x *FileInfo) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// ListFilesRequest asks for all files of the current user.
+type ListFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesRequest) Reset() {
+	*x = ListFilesRequest{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesRequest) ProtoMessage() {}
+
+func (x *ListFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListFilesRequest) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{20}
+}
+
+// ListFilesResponse contains file records of the current user.
+type ListFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Files         []*FileInfo            `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesResponse) Reset() {
+	*x = ListFilesResponse{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesResponse) ProtoMessage() {}
+
+func (x *ListFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListFilesResponse) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ListFilesResponse) GetFiles() []*FileInfo {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+// DeleteFileRequest identifies the file to delete.
+type DeleteFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteFileRequest) Reset() {
+	*x = DeleteFileRequest{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteFileRequest) ProtoMessage() {}
+
+func (x *DeleteFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteFileRequest.ProtoReflect.Descriptor instead.
+func (*DeleteFileRequest) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *DeleteFileRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// DeleteFileResponse reports the result of deletion.
+type DeleteFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteFileResponse) Reset() {
+	*x = DeleteFileResponse{}
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteFileResponse) ProtoMessage() {}
+
+func (x *DeleteFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gophkeeper_v1_gophkeeper_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteFileResponse.ProtoReflect.Descriptor instead.
+func (*DeleteFileResponse) Descriptor() ([]byte, []int) {
+	return file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *DeleteFileResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
 var File_gophkeeper_v1_gophkeeper_proto protoreflect.FileDescriptor
 
 const file_gophkeeper_v1_gophkeeper_proto_rawDesc = "" +
@@ -861,6 +1429,36 @@ const file_gophkeeper_v1_gophkeeper_proto_rawDesc = "" +
 	"\x11DeleteItemRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"$\n" +
 	"\x12DeleteItemResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"F\n" +
+	"\bFileMeta\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x12\n" +
+	"\x04meta\x18\x03 \x01(\tR\x04meta\"b\n" +
+	"\x11UploadFileRequest\x12-\n" +
+	"\x04meta\x18\x01 \x01(\v2\x17.gophkeeper.v1.FileMetaH\x00R\x04meta\x12\x16\n" +
+	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\x06\n" +
+	"\x04data\"$\n" +
+	"\x12UploadFileResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"%\n" +
+	"\x13DownloadFileRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"e\n" +
+	"\x14DownloadFileResponse\x12-\n" +
+	"\x04meta\x18\x01 \x01(\v2\x17.gophkeeper.v1.FileMetaH\x00R\x04meta\x12\x16\n" +
+	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\x06\n" +
+	"\x04data\"\x91\x01\n" +
+	"\bFileInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x12\n" +
+	"\x04meta\x18\x04 \x01(\tR\x04meta\x129\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x12\n" +
+	"\x10ListFilesRequest\"B\n" +
+	"\x11ListFilesResponse\x12-\n" +
+	"\x05files\x18\x01 \x03(\v2\x17.gophkeeper.v1.FileInfoR\x05files\"#\n" +
+	"\x11DeleteFileRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"$\n" +
+	"\x12DeleteFileResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok*P\n" +
 	"\bItemType\x12\x19\n" +
 	"\x15ITEM_TYPE_UNSPECIFIED\x10\x00\x12\t\n" +
@@ -868,7 +1466,7 @@ const file_gophkeeper_v1_gophkeeper_proto_rawDesc = "" +
 	"\x04TEXT\x10\x02\x12\n" +
 	"\n" +
 	"\x06BINARY\x10\x03\x12\b\n" +
-	"\x04CARD\x10\x042\x9a\x04\n" +
+	"\x04CARD\x10\x042\xed\x06\n" +
 	"\n" +
 	"GophKeeper\x12K\n" +
 	"\bRegister\x12\x1e.gophkeeper.v1.RegisterRequest\x1a\x1f.gophkeeper.v1.RegisterResponse\x12B\n" +
@@ -879,7 +1477,13 @@ const file_gophkeeper_v1_gophkeeper_proto_rawDesc = "" +
 	"\aGetItem\x12\x1d.gophkeeper.v1.GetItemRequest\x1a\x1e.gophkeeper.v1.GetItemResponse\x12N\n" +
 	"\tListItems\x12\x1f.gophkeeper.v1.ListItemsRequest\x1a .gophkeeper.v1.ListItemsResponse\x12Q\n" +
 	"\n" +
-	"DeleteItem\x12 .gophkeeper.v1.DeleteItemRequest\x1a!.gophkeeper.v1.DeleteItemResponseBAZ?github.com/kmorozov/gophkeeper/proto/gophkeeper/v1;gophkeeperv1b\x06proto3"
+	"DeleteItem\x12 .gophkeeper.v1.DeleteItemRequest\x1a!.gophkeeper.v1.DeleteItemResponse\x12S\n" +
+	"\n" +
+	"UploadFile\x12 .gophkeeper.v1.UploadFileRequest\x1a!.gophkeeper.v1.UploadFileResponse(\x01\x12Y\n" +
+	"\fDownloadFile\x12\".gophkeeper.v1.DownloadFileRequest\x1a#.gophkeeper.v1.DownloadFileResponse0\x01\x12N\n" +
+	"\tListFiles\x12\x1f.gophkeeper.v1.ListFilesRequest\x1a .gophkeeper.v1.ListFilesResponse\x12Q\n" +
+	"\n" +
+	"DeleteFile\x12 .gophkeeper.v1.DeleteFileRequest\x1a!.gophkeeper.v1.DeleteFileResponseBAZ?github.com/kmorozov/gophkeeper/proto/gophkeeper/v1;gophkeeperv1b\x06proto3"
 
 var (
 	file_gophkeeper_v1_gophkeeper_proto_rawDescOnce sync.Once
@@ -894,7 +1498,7 @@ func file_gophkeeper_v1_gophkeeper_proto_rawDescGZIP() []byte {
 }
 
 var file_gophkeeper_v1_gophkeeper_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_gophkeeper_v1_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_gophkeeper_v1_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_gophkeeper_v1_gophkeeper_proto_goTypes = []any{
 	(ItemType)(0),                 // 0: gophkeeper.v1.ItemType
 	(*RegisterRequest)(nil),       // 1: gophkeeper.v1.RegisterRequest
@@ -911,34 +1515,56 @@ var file_gophkeeper_v1_gophkeeper_proto_goTypes = []any{
 	(*ListItemsResponse)(nil),     // 12: gophkeeper.v1.ListItemsResponse
 	(*DeleteItemRequest)(nil),     // 13: gophkeeper.v1.DeleteItemRequest
 	(*DeleteItemResponse)(nil),    // 14: gophkeeper.v1.DeleteItemResponse
-	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 16: google.protobuf.Empty
+	(*FileMeta)(nil),              // 15: gophkeeper.v1.FileMeta
+	(*UploadFileRequest)(nil),     // 16: gophkeeper.v1.UploadFileRequest
+	(*UploadFileResponse)(nil),    // 17: gophkeeper.v1.UploadFileResponse
+	(*DownloadFileRequest)(nil),   // 18: gophkeeper.v1.DownloadFileRequest
+	(*DownloadFileResponse)(nil),  // 19: gophkeeper.v1.DownloadFileResponse
+	(*FileInfo)(nil),              // 20: gophkeeper.v1.FileInfo
+	(*ListFilesRequest)(nil),      // 21: gophkeeper.v1.ListFilesRequest
+	(*ListFilesResponse)(nil),     // 22: gophkeeper.v1.ListFilesResponse
+	(*DeleteFileRequest)(nil),     // 23: gophkeeper.v1.DeleteFileRequest
+	(*DeleteFileResponse)(nil),    // 24: gophkeeper.v1.DeleteFileResponse
+	(*timestamppb.Timestamp)(nil), // 25: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),         // 26: google.protobuf.Empty
 }
 var file_gophkeeper_v1_gophkeeper_proto_depIdxs = []int32{
 	0,  // 0: gophkeeper.v1.Item.type:type_name -> gophkeeper.v1.ItemType
-	15, // 1: gophkeeper.v1.Item.updated_at:type_name -> google.protobuf.Timestamp
+	25, // 1: gophkeeper.v1.Item.updated_at:type_name -> google.protobuf.Timestamp
 	6,  // 2: gophkeeper.v1.CreateItemRequest.item:type_name -> gophkeeper.v1.Item
 	6,  // 3: gophkeeper.v1.GetItemResponse.item:type_name -> gophkeeper.v1.Item
 	6,  // 4: gophkeeper.v1.ListItemsResponse.items:type_name -> gophkeeper.v1.Item
-	1,  // 5: gophkeeper.v1.GophKeeper.Register:input_type -> gophkeeper.v1.RegisterRequest
-	3,  // 6: gophkeeper.v1.GophKeeper.Login:input_type -> gophkeeper.v1.LoginRequest
-	16, // 7: gophkeeper.v1.GophKeeper.Ping:input_type -> google.protobuf.Empty
-	7,  // 8: gophkeeper.v1.GophKeeper.CreateItem:input_type -> gophkeeper.v1.CreateItemRequest
-	9,  // 9: gophkeeper.v1.GophKeeper.GetItem:input_type -> gophkeeper.v1.GetItemRequest
-	11, // 10: gophkeeper.v1.GophKeeper.ListItems:input_type -> gophkeeper.v1.ListItemsRequest
-	13, // 11: gophkeeper.v1.GophKeeper.DeleteItem:input_type -> gophkeeper.v1.DeleteItemRequest
-	2,  // 12: gophkeeper.v1.GophKeeper.Register:output_type -> gophkeeper.v1.RegisterResponse
-	4,  // 13: gophkeeper.v1.GophKeeper.Login:output_type -> gophkeeper.v1.LoginResponse
-	5,  // 14: gophkeeper.v1.GophKeeper.Ping:output_type -> gophkeeper.v1.PingResponse
-	8,  // 15: gophkeeper.v1.GophKeeper.CreateItem:output_type -> gophkeeper.v1.CreateItemResponse
-	10, // 16: gophkeeper.v1.GophKeeper.GetItem:output_type -> gophkeeper.v1.GetItemResponse
-	12, // 17: gophkeeper.v1.GophKeeper.ListItems:output_type -> gophkeeper.v1.ListItemsResponse
-	14, // 18: gophkeeper.v1.GophKeeper.DeleteItem:output_type -> gophkeeper.v1.DeleteItemResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	15, // 5: gophkeeper.v1.UploadFileRequest.meta:type_name -> gophkeeper.v1.FileMeta
+	15, // 6: gophkeeper.v1.DownloadFileResponse.meta:type_name -> gophkeeper.v1.FileMeta
+	25, // 7: gophkeeper.v1.FileInfo.updated_at:type_name -> google.protobuf.Timestamp
+	20, // 8: gophkeeper.v1.ListFilesResponse.files:type_name -> gophkeeper.v1.FileInfo
+	1,  // 9: gophkeeper.v1.GophKeeper.Register:input_type -> gophkeeper.v1.RegisterRequest
+	3,  // 10: gophkeeper.v1.GophKeeper.Login:input_type -> gophkeeper.v1.LoginRequest
+	26, // 11: gophkeeper.v1.GophKeeper.Ping:input_type -> google.protobuf.Empty
+	7,  // 12: gophkeeper.v1.GophKeeper.CreateItem:input_type -> gophkeeper.v1.CreateItemRequest
+	9,  // 13: gophkeeper.v1.GophKeeper.GetItem:input_type -> gophkeeper.v1.GetItemRequest
+	11, // 14: gophkeeper.v1.GophKeeper.ListItems:input_type -> gophkeeper.v1.ListItemsRequest
+	13, // 15: gophkeeper.v1.GophKeeper.DeleteItem:input_type -> gophkeeper.v1.DeleteItemRequest
+	16, // 16: gophkeeper.v1.GophKeeper.UploadFile:input_type -> gophkeeper.v1.UploadFileRequest
+	18, // 17: gophkeeper.v1.GophKeeper.DownloadFile:input_type -> gophkeeper.v1.DownloadFileRequest
+	21, // 18: gophkeeper.v1.GophKeeper.ListFiles:input_type -> gophkeeper.v1.ListFilesRequest
+	23, // 19: gophkeeper.v1.GophKeeper.DeleteFile:input_type -> gophkeeper.v1.DeleteFileRequest
+	2,  // 20: gophkeeper.v1.GophKeeper.Register:output_type -> gophkeeper.v1.RegisterResponse
+	4,  // 21: gophkeeper.v1.GophKeeper.Login:output_type -> gophkeeper.v1.LoginResponse
+	5,  // 22: gophkeeper.v1.GophKeeper.Ping:output_type -> gophkeeper.v1.PingResponse
+	8,  // 23: gophkeeper.v1.GophKeeper.CreateItem:output_type -> gophkeeper.v1.CreateItemResponse
+	10, // 24: gophkeeper.v1.GophKeeper.GetItem:output_type -> gophkeeper.v1.GetItemResponse
+	12, // 25: gophkeeper.v1.GophKeeper.ListItems:output_type -> gophkeeper.v1.ListItemsResponse
+	14, // 26: gophkeeper.v1.GophKeeper.DeleteItem:output_type -> gophkeeper.v1.DeleteItemResponse
+	17, // 27: gophkeeper.v1.GophKeeper.UploadFile:output_type -> gophkeeper.v1.UploadFileResponse
+	19, // 28: gophkeeper.v1.GophKeeper.DownloadFile:output_type -> gophkeeper.v1.DownloadFileResponse
+	22, // 29: gophkeeper.v1.GophKeeper.ListFiles:output_type -> gophkeeper.v1.ListFilesResponse
+	24, // 30: gophkeeper.v1.GophKeeper.DeleteFile:output_type -> gophkeeper.v1.DeleteFileResponse
+	20, // [20:31] is the sub-list for method output_type
+	9,  // [9:20] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_gophkeeper_v1_gophkeeper_proto_init() }
@@ -946,13 +1572,21 @@ func file_gophkeeper_v1_gophkeeper_proto_init() {
 	if File_gophkeeper_v1_gophkeeper_proto != nil {
 		return
 	}
+	file_gophkeeper_v1_gophkeeper_proto_msgTypes[15].OneofWrappers = []any{
+		(*UploadFileRequest_Meta)(nil),
+		(*UploadFileRequest_Chunk)(nil),
+	}
+	file_gophkeeper_v1_gophkeeper_proto_msgTypes[18].OneofWrappers = []any{
+		(*DownloadFileResponse_Meta)(nil),
+		(*DownloadFileResponse_Chunk)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gophkeeper_v1_gophkeeper_proto_rawDesc), len(file_gophkeeper_v1_gophkeeper_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

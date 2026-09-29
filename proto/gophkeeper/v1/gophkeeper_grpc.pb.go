@@ -20,13 +20,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GophKeeper_Register_FullMethodName   = "/gophkeeper.v1.GophKeeper/Register"
-	GophKeeper_Login_FullMethodName      = "/gophkeeper.v1.GophKeeper/Login"
-	GophKeeper_Ping_FullMethodName       = "/gophkeeper.v1.GophKeeper/Ping"
-	GophKeeper_CreateItem_FullMethodName = "/gophkeeper.v1.GophKeeper/CreateItem"
-	GophKeeper_GetItem_FullMethodName    = "/gophkeeper.v1.GophKeeper/GetItem"
-	GophKeeper_ListItems_FullMethodName  = "/gophkeeper.v1.GophKeeper/ListItems"
-	GophKeeper_DeleteItem_FullMethodName = "/gophkeeper.v1.GophKeeper/DeleteItem"
+	GophKeeper_Register_FullMethodName     = "/gophkeeper.v1.GophKeeper/Register"
+	GophKeeper_Login_FullMethodName        = "/gophkeeper.v1.GophKeeper/Login"
+	GophKeeper_Ping_FullMethodName         = "/gophkeeper.v1.GophKeeper/Ping"
+	GophKeeper_CreateItem_FullMethodName   = "/gophkeeper.v1.GophKeeper/CreateItem"
+	GophKeeper_GetItem_FullMethodName      = "/gophkeeper.v1.GophKeeper/GetItem"
+	GophKeeper_ListItems_FullMethodName    = "/gophkeeper.v1.GophKeeper/ListItems"
+	GophKeeper_DeleteItem_FullMethodName   = "/gophkeeper.v1.GophKeeper/DeleteItem"
+	GophKeeper_UploadFile_FullMethodName   = "/gophkeeper.v1.GophKeeper/UploadFile"
+	GophKeeper_DownloadFile_FullMethodName = "/gophkeeper.v1.GophKeeper/DownloadFile"
+	GophKeeper_ListFiles_FullMethodName    = "/gophkeeper.v1.GophKeeper/ListFiles"
+	GophKeeper_DeleteFile_FullMethodName   = "/gophkeeper.v1.GophKeeper/DeleteFile"
 )
 
 // GophKeeperClient is the client API for GophKeeper service.
@@ -49,6 +53,14 @@ type GophKeeperClient interface {
 	ListItems(ctx context.Context, in *ListItemsRequest, opts ...grpc.CallOption) (*ListItemsResponse, error)
 	// DeleteItem removes a secret by id.
 	DeleteItem(ctx context.Context, in *DeleteItemRequest, opts ...grpc.CallOption) (*DeleteItemResponse, error)
+	// UploadFile streams a file into server-side encrypted storage.
+	UploadFile(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadFileRequest, UploadFileResponse], error)
+	// DownloadFile streams a stored file back to the client.
+	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadFileResponse], error)
+	// ListFiles returns metadata of all files of the current user.
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
+	// DeleteFile removes a stored file by id.
+	DeleteFile(ctx context.Context, in *DeleteFileRequest, opts ...grpc.CallOption) (*DeleteFileResponse, error)
 }
 
 type gophKeeperClient struct {
@@ -129,6 +141,58 @@ func (c *gophKeeperClient) DeleteItem(ctx context.Context, in *DeleteItemRequest
 	return out, nil
 }
 
+func (c *gophKeeperClient) UploadFile(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadFileRequest, UploadFileResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeeper_ServiceDesc.Streams[0], GophKeeper_UploadFile_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[UploadFileRequest, UploadFileResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeeper_UploadFileClient = grpc.ClientStreamingClient[UploadFileRequest, UploadFileResponse]
+
+func (c *gophKeeperClient) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadFileResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeeper_ServiceDesc.Streams[1], GophKeeper_DownloadFile_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DownloadFileRequest, DownloadFileResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeeper_DownloadFileClient = grpc.ServerStreamingClient[DownloadFileResponse]
+
+func (c *gophKeeperClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFilesResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_ListFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeeperClient) DeleteFile(ctx context.Context, in *DeleteFileRequest, opts ...grpc.CallOption) (*DeleteFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteFileResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_DeleteFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GophKeeperServer is the server API for GophKeeper service.
 // All implementations must embed UnimplementedGophKeeperServer
 // for forward compatibility.
@@ -149,6 +213,14 @@ type GophKeeperServer interface {
 	ListItems(context.Context, *ListItemsRequest) (*ListItemsResponse, error)
 	// DeleteItem removes a secret by id.
 	DeleteItem(context.Context, *DeleteItemRequest) (*DeleteItemResponse, error)
+	// UploadFile streams a file into server-side encrypted storage.
+	UploadFile(grpc.ClientStreamingServer[UploadFileRequest, UploadFileResponse]) error
+	// DownloadFile streams a stored file back to the client.
+	DownloadFile(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadFileResponse]) error
+	// ListFiles returns metadata of all files of the current user.
+	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
+	// DeleteFile removes a stored file by id.
+	DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error)
 	mustEmbedUnimplementedGophKeeperServer()
 }
 
@@ -179,6 +251,18 @@ func (UnimplementedGophKeeperServer) ListItems(context.Context, *ListItemsReques
 }
 func (UnimplementedGophKeeperServer) DeleteItem(context.Context, *DeleteItemRequest) (*DeleteItemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteItem not implemented")
+}
+func (UnimplementedGophKeeperServer) UploadFile(grpc.ClientStreamingServer[UploadFileRequest, UploadFileResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method UploadFile not implemented")
+}
+func (UnimplementedGophKeeperServer) DownloadFile(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadFileResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedGophKeeperServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
+}
+func (UnimplementedGophKeeperServer) DeleteFile(context.Context, *DeleteFileRequest) (*DeleteFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
 }
 func (UnimplementedGophKeeperServer) mustEmbedUnimplementedGophKeeperServer() {}
 func (UnimplementedGophKeeperServer) testEmbeddedByValue()                    {}
@@ -327,6 +411,60 @@ func _GophKeeper_DeleteItem_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GophKeeper_UploadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GophKeeperServer).UploadFile(&grpc.GenericServerStream[UploadFileRequest, UploadFileResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeeper_UploadFileServer = grpc.ClientStreamingServer[UploadFileRequest, UploadFileResponse]
+
+func _GophKeeper_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GophKeeperServer).DownloadFile(m, &grpc.GenericServerStream[DownloadFileRequest, DownloadFileResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeeper_DownloadFileServer = grpc.ServerStreamingServer[DownloadFileResponse]
+
+func _GophKeeper_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeeperServer).ListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeeper_ListFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeeperServer).ListFiles(ctx, req.(*ListFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeeper_DeleteFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeeperServer).DeleteFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeeper_DeleteFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeeperServer).DeleteFile(ctx, req.(*DeleteFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GophKeeper_ServiceDesc is the grpc.ServiceDesc for GophKeeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,7 +500,26 @@ var GophKeeper_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DeleteItem",
 			Handler:    _GophKeeper_DeleteItem_Handler,
 		},
+		{
+			MethodName: "ListFiles",
+			Handler:    _GophKeeper_ListFiles_Handler,
+		},
+		{
+			MethodName: "DeleteFile",
+			Handler:    _GophKeeper_DeleteFile_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadFile",
+			Handler:       _GophKeeper_UploadFile_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadFile",
+			Handler:       _GophKeeper_DownloadFile_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "gophkeeper/v1/gophkeeper.proto",
 }

@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"iter"
+	"os"
 	"time"
 
 	pb "github.com/kmorozov/gophkeeper/proto/gophkeeper/v1"
@@ -59,6 +61,12 @@ func New(path string) (*Cache, error) {
 	if _, err := db.Exec(schema); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("init cache: %w", err)
+	}
+	// The cache may hold decrypted secrets, so restrict the file to its owner.
+	// TODO: encrypt sensitive cache fields with a key derived from the user password.
+	if err := os.Chmod(path, 0o600); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("secure cache file: %w", err)
 	}
 	return &Cache{db: db}, nil
 }
@@ -126,6 +134,30 @@ func (c *Cache) ListItems(ctx context.Context) ([]Item, error) {
 		items = append(items, item)
 	}
 	return items, rows.Err()
+}
+
+// ListItemsSeq streams all cached items ordered by updated_at descending,
+// yielding rows without building an intermediate slice. Scan and query errors
+// stop the iteration.
+func (c *Cache) ListItemsSeq(ctx context.Context) iter.Seq[Item] {
+	return func(yield func(Item) bool) {
+		rows, err := c.db.QueryContext(ctx, `
+			SELECT id, type, name, login, password, data, card_number, card_exp, card_cvv, meta, updated_at
+			FROM items ORDER BY updated_at DESC`)
+		if err != nil {
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			item, err := scanItem(rows)
+			if err != nil {
+				return
+			}
+			if !yield(item) {
+				return
+			}
+		}
+	}
 }
 
 // Delete removes an item from the cache.

@@ -4,10 +4,12 @@ package storage
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
-	"strings"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,6 +20,8 @@ import (
 var migrationsFS embed.FS
 
 // Migrate applies the embedded schema migrations to the database.
+// Already-applied objects (duplicate tables or schema objects) are skipped;
+// any other error is returned.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	entries, err := fs.Glob(migrationsFS, "migrations/*.sql")
 	if err != nil {
@@ -28,7 +32,11 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", name, err)
 		}
-		if _, err := pool.Exec(ctx, string(query)); err != nil && !strings.Contains(err.Error(), "already exists") {
+		if _, err := pool.Exec(ctx, string(query)); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && (pgErr.Code == pgerrcode.DuplicateTable || pgErr.Code == pgerrcode.DuplicateObject) {
+				continue
+			}
 			return fmt.Errorf("apply migration %s: %w", name, err)
 		}
 	}

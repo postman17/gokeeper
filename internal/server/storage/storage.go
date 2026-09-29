@@ -2,7 +2,6 @@
 package storage
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -41,24 +40,13 @@ type Item struct {
 	UpdatedAt  time.Time
 }
 
-// Storage is the persistence interface used by the server.
-type Storage interface {
-	// CreateUser registers a new user and returns the generated id.
-	CreateUser(ctx context.Context, login, passwordHash string, kekSalt, dekCiphertext []byte) (uuid.UUID, error)
-	// GetUserByLogin returns the user with the given login.
-	GetUserByLogin(ctx context.Context, login string) (User, error)
-	// GetUserByID returns the user with the given id.
-	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
-	// CreateItem stores a new item and returns the generated id.
-	CreateItem(ctx context.Context, item Item) (uuid.UUID, error)
-	// GetItem returns the item with the given id if it belongs to the user.
-	GetItem(ctx context.Context, userID, id uuid.UUID) (Item, error)
-	// ListItems returns all items of the user.
-	ListItems(ctx context.Context, userID uuid.UUID) ([]Item, error)
-	// DeleteItem removes the item with the given id if it belongs to the user.
-	DeleteItem(ctx context.Context, userID, id uuid.UUID) (bool, error)
-	// Ping checks connectivity to the database.
-	Ping(ctx context.Context) error
-	// Close releases all resources held by the storage.
-	Close() error
+// File is a stored binary object; its content lives in the blob store.
+type File struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	Name      string
+	Size      int64
+	Meta      string
+	S3Key     string
+	UpdatedAt time.Time
 }

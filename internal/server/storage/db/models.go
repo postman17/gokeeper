@@ -25,6 +25,16 @@ type Item struct {
 	UpdatedAt  time.Time
 }
 
+type File struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	Name      string
+	Size      int64
+	Meta      string
+	S3Key     string
+	UpdatedAt time.Time
+}
+
 type User struct {
 	ID            uuid.UUID
 	Login         string

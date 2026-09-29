@@ -46,11 +46,30 @@ gophkeeper version
 
 ### Локальный кэш и офлайн-режим
 
-Команды `items list` и `items get` кэшируют результат в локальной базе SQLite (`~/.gophkeeper/cache.db`, путь можно переопределить через `GOPHKEEPER_CACHE`). Кэш использует pure-Go драйвер `modernc.org/sqlite` (без cgo), поэтому клиент кроссплатформенный.
+Команды `items list` и `items get` кэшируют результат в локальной базе SQLite (`~/.gophkeeper/cache.db`, путь можно переопределить через `GOPHKEEPER_CACHE`; файл создаётся с правами 0600). Кэш использует pure-Go драйвер `modernc.org/sqlite` (без cgo), поэтому клиент кроссплатформенный. Строчный стриминг кэша реализован через `iter.Seq` (`cache.Cache.ListItemsSeq`).
 
-Если сервер недоступен (нет сети, `codes.Unavailable`, истёк 5-секундный таймаут вызова), команды читают данные из кэша и печатают в stderr предупреждение `warning: server unavailable, showing cached data`. Если в кэше данных нет — ошибка `server unavailable and no cached data`.
+Клиентский конфиг собирается через функциональные опции (`client.NewConfig`, `client.WithAddress/WithTokenPath/WithCachePath/WithTimeout`, `client.WithEnv`), env-значения читаются через переданную функцию (по умолчанию `os.Getenv`). Таймаут вызова: `GOPHKEEPER_TIMEOUT` (Go-дюрация, по умолчанию 60s).
 
-Офлайн-режим read-only: `items create` и `items delete` при недоступном сервере завершаются ошибкой `server unavailable` (офлайн-очередь изменений — следующий этап).
+Если сервер недоступен (нет сети, `codes.Unavailable`, истёк таймаут вызова), команды читают данные из кэша и печатают в stderr предупреждение `warning: server unavailable, showing cached data`. Если в кэше данных нет — ошибка `server unavailable and no cached data`.
+
+Офлайн-режим read-only: `items create` и `items delete` при недоступном сервере завершаются ошибкой `server unavailable` (офлайн-очередь изменений — следующий этап; шифрование полей кэша ключом из пароля пользователя — тоже).
+
+## Файлы и S3
+
+Большие бинарные файлы хранятся не в `items.data`, а в S3-совместимом объектном хранилище (MinIO в docker-compose), передача идёт через gRPC streaming по чанкам — файл никогда не собирается целиком ни в памяти сервера, ни в памяти клиента (чанк 64 KiB). Каждый чанк шифруется AES-256-GCM тем же per-user DEK, что и секреты items; в объекте лежит последовательность фреймов `4-byte BE length || nonce || ciphertext`. Ключ объекта: `files/<userID>/<fileID>`. Доступ только владельца (проверка `user_id` в таблице `files`); при неудачной записи/загрузке объект из S3 удаляется (компенсация). Ошибка расшифрования → `codes.Internal` с упоминанием, что мастер-пароль сервера может не совпадать с использованным при загрузке.
+
+Env сервера: `S3_ENDPOINT` (по умолчанию `http://minio:9000`), `S3_BUCKET` (`gophkeeper`), `S3_ACCESS_KEY`/`S3_SECRET_KEY`. Бакет создаётся автоматически при старте (`EnsureBucket`: HeadBucket → CreateBucket).
+
+Команды клиента:
+
+```bash
+gophkeeper files upload ./photo.jpg --name "photo.jpg" --meta "holiday"   # напечатает id
+gophkeeper files download <id> -o out.jpg                                # дефолт — имя из meta
+gophkeeper files list
+gophkeeper files delete <id>
+```
+
+Файлы и их метаданные не кэшируются локально (MVP): при недоступном сервере команды `files *` возвращают ошибку `server unavailable`.
 
 ## Сервер (локально без docker)
 

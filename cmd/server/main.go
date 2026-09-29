@@ -16,12 +16,23 @@ import (
 
 	"github.com/kmorozov/gophkeeper/internal/server"
 	"github.com/kmorozov/gophkeeper/internal/server/auth"
+	"github.com/kmorozov/gophkeeper/internal/server/blobstore"
 	"github.com/kmorozov/gophkeeper/internal/server/storage"
 	pb "github.com/kmorozov/gophkeeper/proto/gophkeeper/v1"
 )
 
 // defaultServerAddr is the address the gRPC server listens on.
 const defaultServerAddr = ":3200"
+
+// Development defaults allow `go run ./cmd/server` to start against a
+// local docker compose stack (postgres on localhost:5437, minio on
+// localhost:9000) without any flags or environment variables. They must
+// never be used in production: the server logs a warning when they apply.
+const (
+	defaultDevDSN            = "postgres://gophkeeper:gophkeeper@localhost:5437/gophkeeper?sslmode=disable"
+	defaultDevJWTSecret      = "dev-secret"
+	defaultDevMasterPassword = "dev-master"
+)
 
 func main() {
 	dsn := flag.String("d", os.Getenv("DATABASE_URL"), "PostgreSQL DSN (or DATABASE_URL)")
@@ -32,13 +43,16 @@ func main() {
 	flag.Parse()
 
 	if *dsn == "" {
-		log.Fatal("database DSN is required: use -d or DATABASE_URL")
+		log.Printf("WARNING: DATABASE_URL is not set, using a development default (postgres on localhost:5437); do not use in production")
+		*dsn = defaultDevDSN
 	}
 	if *jwtSecret == "" {
-		log.Fatal("JWT secret is required: use -s or JWT_SECRET")
+		log.Printf("WARNING: JWT_SECRET is not set, using an insecure development default; do not use in production")
+		*jwtSecret = defaultDevJWTSecret
 	}
 	if *masterPassword == "" {
-		log.Fatal("master password is required: use -master-password or GOPHKEEPER_MASTER_PASSWORD")
+		log.Printf("WARNING: GOPHKEEPER_MASTER_PASSWORD is not set, using an insecure development default; do not use in production")
+		*masterPassword = defaultDevMasterPassword
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -55,18 +69,30 @@ func main() {
 	}
 	jwt := auth.NewJWTManager(*jwtSecret, ttl)
 
-	lis, err := net.Listen("tcp", *addr)
+	blobs, err := blobstore.NewS3BlobStore(ctx, blobstore.S3Config{
+		Endpoint:  envOr("S3_ENDPOINT", "http://localhost:9000"),
+		Bucket:    envOr("S3_BUCKET", "gophkeeper"),
+		AccessKey: envOr("S3_ACCESS_KEY", "gophkeeper"),
+		SecretKey: envOr("S3_SECRET_KEY", "gophkeeper"),
+	})
 	if err != nil {
-		log.Fatalf("listen %s: %v", *addr, err)
+		log.Fatalf("init blob store: %v", err)
 	}
+	if err := blobs.EnsureBucket(ctx); err != nil {
+		log.Fatalf("ensure bucket: %v", err)
+	}
+
+	lis, err := net.Listen("tcp", *addr)
 	if err != nil {
 		log.Fatalf("listen %s: %v", *addr, err)
 	}
 
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		auth.NewUnaryInterceptor(jwt),
+	), grpc.ChainStreamInterceptor(
+		auth.NewStreamInterceptor(jwt),
 	))
-	pb.RegisterGophKeeperServer(grpcServer, server.NewGophKeeper(store, jwt, *masterPassword))
+	pb.RegisterGophKeeperServer(grpcServer, server.NewGophKeeper(store, jwt, *masterPassword, blobs))
 
 	errCh := make(chan error, 1)
 	go func() {

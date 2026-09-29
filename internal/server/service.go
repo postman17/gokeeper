@@ -13,6 +13,7 @@ import (
 
 	"github.com/kmorozov/gophkeeper/internal/crypto"
 	"github.com/kmorozov/gophkeeper/internal/server/auth"
+	"github.com/kmorozov/gophkeeper/internal/server/blobstore"
 	"github.com/kmorozov/gophkeeper/internal/server/storage"
 	pb "github.com/kmorozov/gophkeeper/proto/gophkeeper/v1"
 )
@@ -20,15 +21,17 @@ import (
 // GophKeeper implements the gophkeeper.v1.GophKeeper gRPC service.
 type GophKeeper struct {
 	pb.UnimplementedGophKeeperServer
-	store          *storage.PostgresStorage
+	store          Storage
 	jwt            *auth.JWTManager
 	masterPassword string
+	blobs          blobstore.BlobStore
 }
 
-// NewGophKeeper creates a GophKeeper service backed by the given storage.
-// The master password is kept in memory only and is never logged or persisted.
-func NewGophKeeper(store *storage.PostgresStorage, jwt *auth.JWTManager, masterPassword string) *GophKeeper {
-	return &GophKeeper{store: store, jwt: jwt, masterPassword: masterPassword}
+// NewGophKeeper creates a GophKeeper service backed by the given storage and
+// blob store. The master password is kept in memory only and is never logged
+// or persisted.
+func NewGophKeeper(store Storage, jwt *auth.JWTManager, masterPassword string, blobs blobstore.BlobStore) *GophKeeper {
+	return &GophKeeper{store: store, jwt: jwt, masterPassword: masterPassword, blobs: blobs}
 }
 
 // Register creates a new user and returns a JWT token. Along with the user it

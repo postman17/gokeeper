@@ -228,3 +228,121 @@ func (q *Queries) ListItems(ctx context.Context, userID uuid.UUID) ([]Item, erro
 	}
 	return items, nil
 }
+
+const createFile = `-- name: CreateFile :one
+INSERT INTO files (id, user_id, name, size, meta, s3_key, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, user_id, name, size, meta, s3_key, updated_at
+`
+
+type CreateFileParams struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	Name      string
+	Size      int64
+	Meta      string
+	S3Key     string
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateFile(ctx context.Context, arg CreateFileParams) (File, error) {
+	row := q.db.QueryRow(ctx, createFile,
+		arg.ID,
+		arg.UserID,
+		arg.Name,
+		arg.Size,
+		arg.Meta,
+		arg.S3Key,
+		arg.UpdatedAt,
+	)
+	var i File
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Size,
+		&i.Meta,
+		&i.S3Key,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getFile = `-- name: GetFile :one
+SELECT id, user_id, name, size, meta, s3_key, updated_at
+FROM files
+WHERE id = $1 AND user_id = $2
+`
+
+type GetFileParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) GetFile(ctx context.Context, arg GetFileParams) (File, error) {
+	row := q.db.QueryRow(ctx, getFile, arg.ID, arg.UserID)
+	var i File
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Size,
+		&i.Meta,
+		&i.S3Key,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listFiles = `-- name: ListFiles :many
+SELECT id, user_id, name, size, meta, s3_key, updated_at
+FROM files
+WHERE user_id = $1
+ORDER BY updated_at DESC
+`
+
+func (q *Queries) ListFiles(ctx context.Context, userID uuid.UUID) ([]File, error) {
+	rows, err := q.db.Query(ctx, listFiles, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []File
+	for rows.Next() {
+		var i File
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Size,
+			&i.Meta,
+			&i.S3Key,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deleteFile = `-- name: DeleteFile :execrows
+DELETE FROM files
+WHERE id = $1 AND user_id = $2
+`
+
+type DeleteFileParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) DeleteFile(ctx context.Context, arg DeleteFileParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteFile, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

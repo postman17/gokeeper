@@ -32,3 +32,23 @@ ORDER BY updated_at DESC;
 -- name: DeleteItem :execrows
 DELETE FROM items
 WHERE id = $1 AND user_id = $2;
+
+-- name: CreateFile :one
+INSERT INTO files (id, user_id, name, size, meta, s3_key, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, user_id, name, size, meta, s3_key, updated_at;
+
+-- name: GetFile :one
+SELECT id, user_id, name, size, meta, s3_key, updated_at
+FROM files
+WHERE id = $1 AND user_id = $2;
+
+-- name: ListFiles :many
+SELECT id, user_id, name, size, meta, s3_key, updated_at
+FROM files
+WHERE user_id = $1
+ORDER BY updated_at DESC;
+
+-- name: DeleteFile :execrows
+DELETE FROM files
+WHERE id = $1 AND user_id = $2;
